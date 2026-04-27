@@ -424,6 +424,8 @@ fn parse_styled_string(s: &str) -> StyledText {
 struct StyleConfig {
     format: String,
     format_active: String,
+    pane_format: String,
+    pane_format_active: String,
     overflow_above: String,
     overflow_below: String,
     indicator_active: String,
@@ -433,6 +435,8 @@ struct StyleConfig {
     border: String,
     max_name_length: usize,
     start_index: usize,
+    show_panes: bool,
+    show_plugin_panes: bool,
 }
 
 impl Default for StyleConfig {
@@ -440,6 +444,8 @@ impl Default for StyleConfig {
         Self {
             format: "{index}:{name}".to_string(),
             format_active: "{index}:{name} {indicators}".to_string(),
+            pane_format: "  └ {title}".to_string(),
+            pane_format_active: "  └ {title} *".to_string(),
             overflow_above: "  ^ +{count}".to_string(),
             overflow_below: "  v +{count}".to_string(),
             indicator_active: "*".to_string(),
@@ -449,8 +455,16 @@ impl Default for StyleConfig {
             padding_top: 0,
             border: String::new(),
             start_index: 1,
+            show_panes: true,
+            show_plugin_panes: false,
         }
     }
+}
+
+#[derive(Clone, Copy)]
+enum RowTarget {
+    Tab(u32),
+    Pane(PaneId, u32),
 }
 
 // ========== PLUGIN STATE ==========
@@ -466,6 +480,7 @@ struct State {
     permissions_granted: bool,
     is_selectable: bool,
     pending_events: Vec<Event>,
+    row_targets: Vec<Option<RowTarget>>,
 }
 
 register_plugin!(State);
@@ -478,6 +493,18 @@ impl ZellijPlugin for State {
         }
         if let Some(v) = configuration.get("format_active") {
             self.style.format_active = v.clone();
+        }
+        if let Some(v) = configuration.get("pane_format") {
+            self.style.pane_format = v.clone();
+        }
+        if let Some(v) = configuration.get("pane_format_active") {
+            self.style.pane_format_active = v.clone();
+        }
+        if let Some(v) = configuration.get("show_panes") {
+            self.style.show_panes = matches!(v.as_str(), "true" | "1" | "yes");
+        }
+        if let Some(v) = configuration.get("show_plugin_panes") {
+            self.style.show_plugin_panes = matches!(v.as_str(), "true" | "1" | "yes");
         }
         if let Some(v) = configuration.get("overflow_above") {
             self.style.overflow_above = v.clone();
@@ -575,8 +602,20 @@ impl ZellijPlugin for State {
             }
             Event::Mouse(me) => match me {
                 Mouse::LeftClick(row, _col) => {
-                    if let Some(idx) = self.get_tab_at_row(row as usize) {
-                        switch_tab_to(idx as u32);
+                    let row = row as usize;
+                    match self.row_targets.get(row).copied().flatten() {
+                        Some(RowTarget::Tab(idx)) => switch_tab_to(idx),
+                        Some(RowTarget::Pane(pane_id, tab_idx)) => {
+                            if tab_idx != self.active_tab_idx as u32 {
+                                switch_tab_to(tab_idx);
+                            }
+                            focus_pane_with_id(pane_id, false, false);
+                        }
+                        None => {
+                            if let Some(idx) = self.get_tab_at_row(row) {
+                                switch_tab_to(idx as u32);
+                            }
+                        }
                     }
                 }
                 Mouse::ScrollUp(_) => {
@@ -816,9 +855,69 @@ impl State {
         line
     }
 
+    fn active_tab_panes(&self) -> Vec<PaneInfo> {
+        if !self.style.show_panes {
+            return Vec::new();
+        }
+        let active_index = self.active_tab_idx.saturating_sub(1);
+        let Some(tab) = self.tabs.get(active_index) else {
+            return Vec::new();
+        };
+        let Some(panes) = self.pane_manifest.panes.get(&tab.position) else {
+            return Vec::new();
+        };
+        let mut panes: Vec<PaneInfo> = panes
+            .iter()
+            .filter(|p| self.style.show_plugin_panes || !p.is_plugin)
+            .cloned()
+            .collect();
+        panes.sort_by_key(|p| (p.is_plugin, p.id));
+        panes
+    }
+
+    fn expand_pane_format(&self, format: &str, pane: &PaneInfo, index: usize) -> StyledText {
+        let tokens = parse_tmux_format(format);
+        let mut result = StyledText::new();
+        let mut current_style = InlineStyle::default();
+
+        let title = if pane.title.is_empty() {
+            format!("Pane #{}", pane.id)
+        } else {
+            pane.title.clone()
+        };
+
+        for token in tokens {
+            match token {
+                FormatToken::Style(style) => current_style = style,
+                FormatToken::Variable { name, width } => {
+                    let value = match name.as_str() {
+                        "index" | "i" => index.to_string(),
+                        "title" | "t" | "name" | "n" | "pane_title" => title.clone(),
+                        "id" => pane.id.to_string(),
+                        _ => format!("{{{}}}", name),
+                    };
+                    let text = if let Some(w) = width {
+                        truncate_string(&value, w)
+                    } else {
+                        truncate_string(&value, self.style.max_name_length)
+                    };
+                    result.push(text, current_style.clone());
+                }
+                FormatToken::Literal(text) => {
+                    result.push(text, current_style.clone());
+                }
+            }
+        }
+        result
+    }
+
     fn render_vertical(&mut self, rows: usize, cols: usize) {
         let top_padding = self.style.padding_top;
-        let available_rows = rows.saturating_sub(top_padding);
+        let active_panes = self.active_tab_panes();
+        let pane_rows = active_panes.len();
+
+        // Reserve rows for panes so the visible-tab calculation accounts for them.
+        let available_rows = rows.saturating_sub(top_padding).saturating_sub(pane_rows);
 
         let tab_count = self.tabs.len();
         let active_index = self.active_tab_idx.saturating_sub(1);
@@ -827,21 +926,21 @@ impl State {
             calculate_visible_range(tab_count, available_rows, active_index);
 
         let mut lines: Vec<String> = Vec::with_capacity(rows);
+        let mut targets: Vec<Option<RowTarget>> = Vec::with_capacity(rows);
 
-        // Add top padding lines
         for _ in 0..top_padding {
             lines.push(self.build_empty_line(cols));
+            targets.push(None);
         }
 
-        // Render "above" overflow indicator
         if tabs_above > 0 {
             let indicator_text =
                 self.expand_overflow_format(&self.style.overflow_above, tabs_above);
             let styled = parse_styled_string(&indicator_text);
             lines.push(self.build_line(&styled, cols, false));
+            targets.push(None);
         }
 
-        // Render visible tabs
         for i in start_index..end_index {
             if let Some(tab) = self.tabs.get(i).cloned() {
                 let is_active = tab.active;
@@ -853,23 +952,47 @@ impl State {
 
                 let styled = self.expand_tmux_format(format, &tab, i + self.style.start_index);
                 lines.push(self.build_line(&styled, cols, is_active));
+                targets.push(Some(RowTarget::Tab((i + 1) as u32)));
+
+                if is_active && pane_rows > 0 {
+                    for (p_idx, pane) in active_panes.iter().enumerate() {
+                        let pane_format = if pane.is_focused {
+                            &self.style.pane_format_active
+                        } else {
+                            &self.style.pane_format
+                        };
+                        let styled = self.expand_pane_format(
+                            pane_format,
+                            pane,
+                            p_idx + self.style.start_index,
+                        );
+                        lines.push(self.build_line(&styled, cols, pane.is_focused));
+                        let pane_id = if pane.is_plugin {
+                            PaneId::Plugin(pane.id)
+                        } else {
+                            PaneId::Terminal(pane.id)
+                        };
+                        targets.push(Some(RowTarget::Pane(pane_id, (i + 1) as u32)));
+                    }
+                }
             }
         }
 
-        // Render "below" overflow indicator
         if tabs_below > 0 {
             let indicator_text =
                 self.expand_overflow_format(&self.style.overflow_below, tabs_below);
             let styled = parse_styled_string(&indicator_text);
             lines.push(self.build_line(&styled, cols, false));
+            targets.push(None);
         }
 
-        // Fill remaining rows with empty lines (just border)
         while lines.len() < rows {
             lines.push(self.build_empty_line(cols));
+            targets.push(None);
         }
 
-        // Print all lines with ANSI styling
+        self.row_targets = targets;
+
         for (i, line) in lines.iter().enumerate() {
             if i < lines.len() - 1 {
                 println!("{}\x1b[m", line);
