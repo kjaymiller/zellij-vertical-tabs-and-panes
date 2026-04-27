@@ -5,7 +5,7 @@ layout {
     pane split_direction="vertical" {
         // Left sidebar - tmux-style tab list
         pane size=24 borderless=true {
-            plugin location="file:~/zellij-vertical-tabs/target/wasm32-wasip1/release/zellij-vertical-tabs.wasm" {
+            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
                 // Inactive tabs: muted index, default name
                 // Format: "1:my-shell"
                 format " #[fg=muted]{index}#[fg=none]:#[fg=secondary]{=18:title}"
@@ -28,6 +28,11 @@ layout {
                 border ""
 
                 padding_top 1
+
+                // Show panes under the active tab; click to focus
+                show_panes "true"
+                pane_format " #[fg=muted]  └ #[fg=secondary]{=18:title}"
+                pane_format_active " #[fg=accent]  └ #[fg=none]{=18:title}"
             }
         }
         // Main content pane

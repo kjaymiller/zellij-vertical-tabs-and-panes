@@ -19,7 +19,7 @@ keybinds {
     shared {
         // Toggle selectability (for resizing the pane)
         bind "Alt s" {
-            MessagePlugin "file:~/zellij-vertical-tabs/target/wasm32-wasip1/release/zellij-vertical-tabs.wasm" {
+            MessagePlugin "file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
                 name "toggle_selectable"
             }
         }
@@ -30,7 +30,7 @@ layout {
     pane split_direction="vertical" {
         // Left sidebar - tmux-style
         pane size=20 borderless=true {
-            plugin location="file:~/zellij-vertical-tabs/target/wasm32-wasip1/release/zellij-vertical-tabs.wasm" {
+            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
                 // Tmux-style: index:title (pane title), active has * suffix
                 // For active tab highlighting options:
                 //   #[bg=236,fill] - fill entire row with background color 236
@@ -45,6 +45,11 @@ layout {
                 max_name_length 15
                 // Border with 256-color (238 = dark gray)
                 border "#[fg=238]│"
+
+                // Show panes under the active tab; click to focus
+                show_panes "true"
+                pane_format "#[fg=238]  └ {title}"
+                pane_format_active "#[bg=236,fill]  └ {title}"
             }
         }
         // Main content pane - borderless for clean tmux look
