@@ -1,6 +1,8 @@
 # Vertical Tab Bar for Zellij
 
-A zellij plugin that displays tabs vertically on the left or right side of the screen.
+> **Note:** This is a modification of [cfal/zellij-vertical-tabs](https://github.com/cfal/zellij-vertical-tabs). The primary addition in this fork is displaying the panes of the active tab beneath it in the vertical bar (enabled via `show_panes`). I will try to maintain compatibility with the upstream source so configuration and behavior remain interchangeable where possible.
+
+A zellij plugin that displays tabs vertically on the left or right side of the screen, with optional pane listings under the active tab.
 
 ![Vertical Tab Bar Screenshot](screenshot.png)
 
@@ -23,6 +25,7 @@ Horizontal tab bars become hard to read when you have many tabs - names get trun
 - **Name truncation** - Long tab names truncated with `...` to fit width
 - **Tmux-style formatting** - Inline color syntax like `#[fg=accent]`
 - **Pane title support** - Display focused pane's terminal title via `{title}`
+- **Pane listing** *(fork addition)* - Optionally show the panes of the active tab listed beneath it via `show_panes`
 
 ## Requirements
 
@@ -194,6 +197,9 @@ plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
     // Overflow indicator formats (when tabs don't fit)
     overflow_above "  ^ +{count}"
     overflow_below "  v +{count}"
+
+    // Show panes of the active tab listed under it (fork addition)
+    show_panes true
 }
 ```
 
