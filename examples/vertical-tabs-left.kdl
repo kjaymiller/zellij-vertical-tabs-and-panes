@@ -5,7 +5,7 @@ keybinds {
     shared {
         // Toggle selectability (for resizing the pane)
         bind "Alt s" {
-            MessagePlugin "file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
+            MessagePlugin "file:~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm" {
                 name "toggle_selectable"
             }
         }
@@ -15,7 +15,7 @@ keybinds {
 layout {
     pane split_direction="vertical" {
         pane size=18 borderless=true {
-            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
+            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm" {
                 // Colorful style with custom indicators
                 format "#[fg=muted]{index} #[fg=none]{name}"
                 format_active "#[fg=accent]▶ {index} {name} #[fg=success]{indicators}"

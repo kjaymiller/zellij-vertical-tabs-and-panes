@@ -1,8 +1,9 @@
 [package]
-name = "zellij-vertical-tabs"
+name = "zellij-vertical-tabs-and-panes"
 version = "0.1.0"
 edition = "2024"
-description = "A vertical tab bar plugin for zellij"
+description = "A vertical tab bar plugin for zellij with optional pane listings under the active tab"
+repository = "https://github.com/kjaymiller/zellij-vertical-tabs-and-panes"
 license = "MIT"
 
 [dependencies]

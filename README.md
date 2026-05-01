@@ -44,7 +44,7 @@ On first run, zellij will prompt you to grant permissions. Focus the plugin pane
 If the permissions popup doesn't seem responsive, you can write to the permissions file directly. On Linux, edit `~/.cache/zellij/permissions.kdl` and add:
 
 ```kdl
-"/absolute/path/to/zellij-vertical-tabs.wasm" {
+"/absolute/path/to/zellij-vertical-tabs-and-panes.wasm" {
     ReadApplicationState
     ChangeApplicationState
 }
@@ -54,12 +54,12 @@ If the permissions popup doesn't seem responsive, you can write to the permissio
 
 ### Download from Releases
 
-1. Download `zellij-vertical-tabs.wasm` from the [latest release](https://github.com/cfal/zellij-vertical-tabs/releases/latest)
+1. Download `zellij-vertical-tabs-and-panes.wasm` from the [latest release](https://github.com/kjaymiller/zellij-vertical-tabs-and-panes/releases/latest)
 
 2. Copy it to your zellij plugins directory:
    ```bash
    mkdir -p ~/.config/zellij/plugins
-   cp zellij-vertical-tabs.wasm ~/.config/zellij/plugins/
+   cp zellij-vertical-tabs-and-panes.wasm ~/.config/zellij/plugins/
    ```
 
 ### Building from Source
@@ -71,15 +71,21 @@ If the permissions popup doesn't seem responsive, you can write to the permissio
 
 2. **Clone and build**:
    ```bash
-   git clone https://github.com/cfal/zellij-vertical-tabs.git
-   cd zellij-vertical-tabs
+   git clone https://github.com/kjaymiller/zellij-vertical-tabs-and-panes.git
+   cd zellij-vertical-tabs-and-panes
    cargo build --release
    ```
 
 3. **Copy the plugin** to your zellij plugins directory:
    ```bash
    mkdir -p ~/.config/zellij/plugins
-   cp target/wasm32-wasip1/release/zellij-vertical-tabs.wasm ~/.config/zellij/plugins/
+   cp target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm ~/.config/zellij/plugins/
+   ```
+
+> **Note on the build artifact:** Cargo writes the binary using the package name (`zellij-vertical-tabs-and-panes`). If you have an older `zellij-vertical-tabs.wasm` in your plugins directory from a prior install, you can delete it.
+
+   ```bash
+   rm -f ~/.config/zellij/plugins/zellij-vertical-tabs.wasm
    ```
 
 ## Usage
@@ -113,7 +119,7 @@ Create your own layout file to customize the tab bar width and position.
 layout {
     pane split_direction="vertical" {
         pane size=18 borderless=true {
-            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm"
+            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm"
         }
         pane
     }
@@ -130,7 +136,7 @@ layout {
     pane split_direction="vertical" {
         pane  // Main content
         pane size=20 borderless=true {
-            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm"
+            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm"
         }
     }
     pane size=1 borderless=true {
@@ -145,7 +151,7 @@ layout {
 layout {
     pane split_direction="vertical" {
         pane size=15 borderless=true {
-            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm"
+            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm"
         }
         pane
     }
@@ -170,7 +176,7 @@ Then save your layout file as `~/.config/zellij/layouts/vertical-tabs-left.kdl`.
 Configure the plugin in your layout file:
 
 ```kdl
-plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
+plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm" {
     // Tab format (inactive tabs)
     format "{index}:{name}"
 
@@ -360,6 +366,15 @@ The viewport automatically scrolls to keep the active tab visible when you switc
 ### New tabs show wrong title
 
 This is a known limitation. When a new tab is created, zellij sends the PaneUpdate event before the shell has set the terminal title via ANSI escape sequences. The plugin will show "..." until the title is available (usually after switching tabs or creating another tab).
+
+## Documentation
+
+Full docs (Diátaxis-organized) live under [`docs/`](docs/):
+
+- [Tutorials](docs/tutorials/) — guided walkthroughs (start with [Getting started](docs/tutorials/getting-started.md))
+- [How-to guides](docs/how-to/) — task-oriented recipes
+- [Reference](docs/reference/) — every option, variable, and message
+- [Explanation](docs/explanation/) — design notes and the relationship to upstream
 
 ## Resources
 

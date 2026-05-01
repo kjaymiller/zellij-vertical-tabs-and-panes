@@ -3345,7 +3345,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zellij-vertical-tabs"
+name = "zellij-vertical-tabs-and-panes"
 version = "0.1.0"
 dependencies = [
  "unicode-width 0.2.2",

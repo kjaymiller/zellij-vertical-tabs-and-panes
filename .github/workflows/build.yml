@@ -34,9 +34,9 @@ jobs:
 
       - name: Verify plugin exists
         run: |
-          if [ -f "target/wasm32-wasip1/release/zellij-vertical-tabs.wasm" ]; then
-            echo "Plugin found: target/wasm32-wasip1/release/zellij-vertical-tabs.wasm"
-            ls -la "target/wasm32-wasip1/release/zellij-vertical-tabs.wasm"
+          if [ -f "target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm" ]; then
+            echo "Plugin found: target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm"
+            ls -la "target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm"
           else
             echo "Plugin not found!"
             echo "Contents of release directory:"
@@ -47,8 +47,8 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: zellij-vertical-tabs-wasm32-wasip1
-          path: target/wasm32-wasip1/release/zellij-vertical-tabs.wasm
+          name: zellij-vertical-tabs-and-panes-wasm32-wasip1
+          path: target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm
           if-no-files-found: error
 
   release:

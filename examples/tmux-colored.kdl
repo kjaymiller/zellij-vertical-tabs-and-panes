@@ -5,7 +5,7 @@ layout {
     pane split_direction="vertical" {
         // Left sidebar - tmux-style tab list
         pane size=24 borderless=true {
-            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs.wasm" {
+            plugin location="file:~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm" {
                 // Inactive tabs: muted index, default name
                 // Format: "1:my-shell"
                 format " #[fg=muted]{index}#[fg=none]:#[fg=secondary]{=18:title}"
