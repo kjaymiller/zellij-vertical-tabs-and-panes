@@ -9,11 +9,12 @@ LEGACY_WASM      := $(PLUGIN_DIR)/zellij-vertical-tabs.wasm
 LAYOUT_NAME      ?= vertical-tabs-left
 INSTALLED_LAYOUT := $(LAYOUT_DIR)/$(LAYOUT_NAME).kdl
 LAYOUT_SRC       := examples/$(LAYOUT_NAME).kdl
+CONFIG_FILE      := $(ZELLIJ_CONFIG)/config.kdl
 
 PLUGIN_URL       := file:$(INSTALLED_WASM)
 LEGACY_URL       := file:$(LEGACY_WASM)
 
-.PHONY: all build install install-layout update reload clean uninstall help
+.PHONY: all build install install-layout set-default update reload clean uninstall help
 
 all: build
 
@@ -39,6 +40,30 @@ install-layout:
 	else \
 		echo "Layout already present: $(INSTALLED_LAYOUT) (not overwritten)"; \
 	fi
+
+set-default:
+	@mkdir -p $(ZELLIJ_CONFIG)
+	@touch $(CONFIG_FILE)
+	@current=$$(grep -E '^[[:space:]]*default_layout' $(CONFIG_FILE) | head -1 | sed -E 's/.*"([^"]*)".*/\1/'); \
+	if [ "$$current" = "$(LAYOUT_NAME)" ]; then \
+		echo "default_layout already set to \"$(LAYOUT_NAME)\" in $(CONFIG_FILE)"; \
+		exit 0; \
+	fi; \
+	if [ -n "$$current" ]; then \
+		printf 'Replace default_layout "%s" with "%s" in %s? [y/N] ' "$$current" "$(LAYOUT_NAME)" "$(CONFIG_FILE)"; \
+	else \
+		printf 'Set default_layout "%s" in %s? [y/N] ' "$(LAYOUT_NAME)" "$(CONFIG_FILE)"; \
+	fi; \
+	read ans; \
+	case "$$ans" in y|Y|yes|YES) ;; *) echo "Aborted."; exit 0;; esac; \
+	cp $(CONFIG_FILE) $(CONFIG_FILE).bak; \
+	if [ -n "$$current" ]; then \
+		sed -i.tmp -E 's|^([[:space:]]*default_layout[[:space:]]+)"[^"]*"|\1"$(LAYOUT_NAME)"|' $(CONFIG_FILE); \
+		rm -f $(CONFIG_FILE).tmp; \
+	else \
+		printf '\ndefault_layout "%s"\n' "$(LAYOUT_NAME)" >> $(CONFIG_FILE); \
+	fi; \
+	echo "Updated $(CONFIG_FILE) (backup: $(CONFIG_FILE).bak)"
 
 reload:
 	@if [ -z "$$ZELLIJ_SESSION_NAME" ]; then \
@@ -74,6 +99,7 @@ help:
 	@echo "  build           Build the wasm plugin (release)"
 	@echo "  install         Build, copy wasm to $(PLUGIN_DIR), install layout if missing"
 	@echo "  install-layout  Copy $(LAYOUT_SRC) to $(INSTALLED_LAYOUT) (no overwrite)"
+	@echo "  set-default     Prompt to set default_layout in $(CONFIG_FILE)"
 	@echo "  reload          Reload plugin in current zellij session"
 	@echo "  update          install + reload (use after editing source)"
 	@echo "  uninstall       Remove installed wasm"
