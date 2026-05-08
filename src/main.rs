@@ -442,10 +442,10 @@ struct StyleConfig {
 impl Default for StyleConfig {
     fn default() -> Self {
         Self {
-            format: "{index}:{name}".to_string(),
-            format_active: "{index}:{name} {indicators}".to_string(),
-            pane_format: "  └ {title}".to_string(),
-            pane_format_active: "  └ {title} *".to_string(),
+            format: "#[fg=muted]{index}:{name}".to_string(),
+            format_active: "#[bold,fg=accent]{index}:{name} {indicators}".to_string(),
+            pane_format: "#[fg=dim]  └ {title}".to_string(),
+            pane_format_active: "#[bold,fg=accent]  └ {title} *".to_string(),
             overflow_above: "  ^ +{count}".to_string(),
             overflow_below: "  v +{count}".to_string(),
             indicator_active: "*".to_string(),

@@ -62,31 +62,58 @@ If the permissions popup doesn't seem responsive, you can write to the permissio
    cp zellij-vertical-tabs-and-panes.wasm ~/.config/zellij/plugins/
    ```
 
-### Building from Source
+### Building from Source (with `make`)
 
-1. **Install the WebAssembly target** (one-time setup):
-   ```bash
-   rustup target add wasm32-wasip1
-   ```
+The repo ships a Makefile that builds the plugin, installs it into `~/.config/zellij/plugins/`, and drops a default layout into `~/.config/zellij/layouts/` so the plugin is wired in out of the box.
 
-2. **Clone and build**:
-   ```bash
-   git clone https://github.com/kjaymiller/zellij-vertical-tabs-and-panes.git
-   cd zellij-vertical-tabs-and-panes
-   cargo build --release
-   ```
+```bash
+rustup target add wasm32-wasip1   # one-time
+git clone https://github.com/kjaymiller/zellij-vertical-tabs-and-panes.git
+cd zellij-vertical-tabs-and-panes
+make install
+```
 
-3. **Copy the plugin** to your zellij plugins directory:
-   ```bash
-   mkdir -p ~/.config/zellij/plugins
-   cp target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm ~/.config/zellij/plugins/
-   ```
+`make install` will:
 
-> **Note on the build artifact:** Cargo writes the binary using the package name (`zellij-vertical-tabs-and-panes`). If you have an older `zellij-vertical-tabs.wasm` in your plugins directory from a prior install, you can delete it.
+- build `target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm`
+- copy it to `~/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm`
+- copy `examples/vertical-tabs-left.kdl` to `~/.config/zellij/layouts/vertical-tabs-left.kdl` (only if not already present — your customizations are safe)
+- remove the legacy `zellij-vertical-tabs.wasm` if present
 
-   ```bash
-   rm -f ~/.config/zellij/plugins/zellij-vertical-tabs.wasm
-   ```
+To use it as your default layout, add this to `~/.config/zellij/config.kdl`:
+
+```kdl
+default_layout "vertical-tabs-left"
+```
+
+### Updating
+
+After pulling new changes (or editing source locally), update the installed plugin and reload it in your current zellij session:
+
+```bash
+make update
+```
+
+`make update` runs `make install` then asks the running zellij session to reload the plugin in place — no need to close and reopen the pane. It must be run from inside a zellij pane (it reads `$ZELLIJ_SESSION_NAME`).
+
+Other targets: `make build`, `make reload`, `make uninstall`, `make help`.
+
+### Building manually (without `make`)
+
+```bash
+rustup target add wasm32-wasip1
+cargo build --release
+mkdir -p ~/.config/zellij/plugins
+cp target/wasm32-wasip1/release/zellij-vertical-tabs-and-panes.wasm ~/.config/zellij/plugins/
+```
+
+To reload in a running session:
+
+```bash
+zellij action start-or-reload-plugin file:$HOME/.config/zellij/plugins/zellij-vertical-tabs-and-panes.wasm
+```
+
+> **Note on the build artifact:** Cargo writes the binary using the package name (`zellij-vertical-tabs-and-panes`). If you have an older `zellij-vertical-tabs.wasm` in your plugins directory from a prior install, delete it: `rm -f ~/.config/zellij/plugins/zellij-vertical-tabs.wasm`.
 
 ## Usage
 
